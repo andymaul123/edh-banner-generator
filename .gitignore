@@ -64,5 +64,6 @@ typings/
 .DS_Store
 
 # App Specific Directories
-input/
-output/
+input/*
+output/*
+store/*
