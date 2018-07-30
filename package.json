@@ -1,0 +1,34 @@
+{
+  "name": "edh-banner-generator",
+  "version": "1.0.0",
+  "description": "Generates banners for EDH decklists from CLI",
+  "main": "app.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andymaul123/edh-banner-generator.git"
+  },
+  "keywords": [
+    "mtg",
+    "banner",
+    "edh",
+    "generator"
+  ],
+  "author": "Andrew Maul",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andymaul123/edh-banner-generator/issues"
+  },
+  "homepage": "https://github.com/andymaul123/edh-banner-generator#readme",
+  "dependencies": {
+    "fs-extra": "^7.0.0",
+    "jimp": "^0.2.28",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2"
+  }
+}
