@@ -1,9 +1,20 @@
-var fse = require('fs-extra');
-var jimp = require('jimp');
-var rp = require('request-promise');
+/*
+===================================================================================================
+Constants + Variables
+===================================================================================================
+*/
+const fse = require('fs-extra'),
+      jimp = require('jimp'),
+      rp = require('request-promise');
 
-var cardsObj = {};
-var count = 0;
+let cardsObj = {},
+    count = 0;
+
+/*
+===================================================================================================
+Functions
+===================================================================================================
+*/
 
 readInputDirectory();
 
@@ -20,11 +31,13 @@ function readInputDirectory() {
 }
 
 function convertInputToObjects(input) {
-  var list = String(input);
-  list =  list.replace(/1x |1x/g,'');
-  cardsObj.namesArray = list.split('\n');
-  list = list.replace(/ /g,'+');
-  cardsObj.uriArray = list.split('\n');
+    var list = String(input);
+    list =  list.replace(/1x |1x/g,'');
+    cardsObj.namesArray = list.split('\n');
+    list = list.replace(/ /g,'+');
+    cardsObj.uriArray = list.split('\n');
+    cardsObj.namesArray = cardsObj.namesArray.filter(Boolean);
+    cardsObj.uriArray = cardsObj.uriArray.filter(Boolean);
 }
 
 function initJimp() {
@@ -37,27 +50,24 @@ function compositeImages(startingImage) {
     console.log("Compositing images.");
     requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png")
         .then((response) => {
-            var retrievedCardImage = jimp.read(response)
-                .then((image) => {
-                    return image.scale(2)
-                    .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
-                    .resize(870,jimp.AUTO);
-                })
-                .then((editedImage) => {
-                    return startingImage.composite(editedImage,0,0);
-                })
-                .then((compositedImage) => {
-                    if(count <=9 && count < cardsObj.uriArray.length - 1) {
-                      count++;
-                        compositeImages(compositedImage);
-                    }
-                    else {
-                        finalizeImage(compositedImage);
-                    }
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
+            return jimp.read(response)
+        })
+        .then((image) => {
+            return image.scale(2)
+                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
+                .resize(870,jimp.AUTO);
+        })
+        .then((editedImage) => {
+            return startingImage.composite(editedImage,400*count,0);
+        })
+        .then((compositedImage) => {
+            if(count <=9 && count < cardsObj.uriArray.length - 1) {
+              count++;
+                compositeImages(compositedImage);
+            }
+            else {
+                finalizeImage(compositedImage);
+            }
         })
         .catch((err) => {
             console.log(err);
