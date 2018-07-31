@@ -2,7 +2,8 @@ var fse = require('fs-extra');
 var jimp = require('jimp');
 var rp = require('request-promise');
 
-var cardArray;
+var cardsObj = {};
+var count = 0;
 
 readInputDirectory();
 
@@ -21,8 +22,9 @@ function readInputDirectory() {
 function inputToArray(input) {
   var list = String(input);
   list =  list.replace(/1x |1x/g,'');
+  cardsObj.namesArray = list.split('\n');
   list = list.replace(/ /g,'+');
-  cardArray = list.split('\n');
+  cardsObj.uriArray = list.split('\n');
 }
 
 function initJimp() {
@@ -34,12 +36,12 @@ function initJimp() {
 function compositeImages(startingImage) {
     console.log("Compositing images.");
 
-    requestImageData("https://api.scryfall.com/cards/named?exact="+cardArray[0]+"&format=image")
+    requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image")
         .then((response) => {
             var retrievedCardImage = new jimp(response, function(){});
             startingImage.composite(retrievedCardImage, getRandomInt(10)*100,getRandomInt(10)*100);
-            cardArray.splice(0,1);
-            if(cardArray.length) {
+            count++;
+            if(count <=9 && count <= cardsObj.uriArray.length - 1) {
                 compositeImages(startingImage);
             }
             else {
@@ -64,7 +66,7 @@ function requestImageData(url) {
     };
     return rp(options)
         .then((data) => {
-          console.log("Image request successful.");
+          console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
           return data;
         })
         .catch((err) => {
