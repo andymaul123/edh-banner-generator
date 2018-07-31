@@ -9,9 +9,9 @@ readInputDirectory();
 
 function readInputDirectory() {
     fse.readFile('./input/list.txt', 'utf8')
-        .then((data) => {
+        .then((inputData) => {
             console.log("Reading list from local directory.");
-            inputToArray(data);
+            convertInputToObjects(inputData);
             initJimp();
         })
         .catch((err) => {
@@ -19,7 +19,7 @@ function readInputDirectory() {
         });
 }
 
-function inputToArray(input) {
+function convertInputToObjects(input) {
   var list = String(input);
   list =  list.replace(/1x |1x/g,'');
   cardsObj.namesArray = list.split('\n');
@@ -35,27 +35,41 @@ function initJimp() {
 
 function compositeImages(startingImage) {
     console.log("Compositing images.");
-
-    requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image")
+    requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png")
         .then((response) => {
-            var retrievedCardImage = new jimp(response, function(){});
-            startingImage.composite(retrievedCardImage, getRandomInt(10)*100,getRandomInt(10)*100);
-            count++;
-            if(count <=9 && count <= cardsObj.uriArray.length - 1) {
-                compositeImages(startingImage);
-            }
-            else {
-                finalizeImage(startingImage);
-            }
+            var retrievedCardImage = jimp.read(response)
+                .then((image) => {
+                    return image.scale(2)
+                    .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
+                    .resize(870,jimp.AUTO);
+                })
+                .then((editedImage) => {
+                    return startingImage.composite(editedImage,0,0);
+                })
+                .then((compositedImage) => {
+                    if(count <=9 && count < cardsObj.uriArray.length - 1) {
+                      count++;
+                        compositeImages(compositedImage);
+                    }
+                    else {
+                        finalizeImage(compositedImage);
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
         })
         .catch((err) => {
             console.log(err);
         });
-
 }
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
+}
+
+function retrieveStoredImageData(name) {
+
 }
 
 function requestImageData(url) {
