@@ -14,12 +14,13 @@ let cardsObj = [],
 
 /*
 ===================================================================================================
-Functions
+Main Functions
 ===================================================================================================
 */
 
 readInputDirectory();
 
+// Reads local file system for list.txt
 function readInputDirectory() {
     fse.readFile('./input/list.txt', 'utf8')
         .then((inputData) => {
@@ -32,21 +33,7 @@ function readInputDirectory() {
         });
 }
 
-function convertInputToObjects(input) {
-    var list = String(input).replace(/1x |1x/g,'');
-    var tempArray = list.split(/\n|\r/g);
-    var item = {};
-    for (var i = tempArray.length - 1; i >= 0; i--) {
-        item = {};
-        item.set = tempArray[i].indexOf("(") > -1 ? tempArray[i].slice(tempArray[i].indexOf("(")+1,tempArray[i].indexOf(")")).trim() : "";
-        item.commander = tempArray[i].indexOf("*") > -1 ? true : false;
-        item.plainName = tempArray[i].replace(/\([^)]*\)|\*/g,'').trim();
-        item.uri = item.plainName.replace(/ /g,'+');
-        cardsObj.push(item);
-    }
-    cardsObj.filter(Boolean);
-}
-
+// Initializes background image
 function initJimp() {
     console.log("Initializing JIMP.");
     if(argv.b) {
@@ -63,6 +50,7 @@ function initJimp() {
     }
 }
 
+// Core loop that composites images onto background image
 function compositeImages(startingImage) {
     retrieveStoredImageData()
         .then((image) => {
@@ -74,12 +62,19 @@ function compositeImages(startingImage) {
         })
         .then((image) => {
             var rotation = (Math.round(Math.random()) * 2 - 1) * getRandomInt(30);
+            if(cardsObj[count].commander) {
+                rotation = 0;
+            }
             return image
                 .rotate(rotation)
                 .resize(jimp.AUTO,postRotationScale(430,600,rotation));
         })
         .then((image) => {
-            return startingImage.composite(image,400*count,0);
+            if(cardsObj[count].commander) {
+                return startingImage.composite(image,809,121);
+            } else {
+                return startingImage.composite(image,400*count,0);
+            }
         })
         .then((compositedImage) => {
             if(count <=9 && count < cardsObj.length - 1) {
@@ -93,6 +88,40 @@ function compositeImages(startingImage) {
         .catch((err) => {
             console.log(err);
         });
+}
+
+// Core loop terminates here and outputs final version to local system
+function finalizeImage(finalImage) {
+    console.log("Done compositing. Writing to output.");
+    finalImage.write("./output/final.png");
+}
+
+/*
+===================================================================================================
+Helper Functions
+===================================================================================================
+*/
+
+// Processes input data into usable structure
+function convertInputToObjects(input) {
+    var list = String(input).replace(/1x |1x/g,'');
+    var tempArray = list.split(/\n|\r/g);
+    var item = {};
+    var commander;
+    for (var i = tempArray.length - 1; i >= 0; i--) {
+        item = {};
+        item.set = tempArray[i].indexOf("(") > -1 ? tempArray[i].slice(tempArray[i].indexOf("(")+1,tempArray[i].indexOf(")")).trim() : "";
+        item.commander = tempArray[i].indexOf("*") > -1 ? true : false;
+        item.plainName = tempArray[i].replace(/\([^)]*\)|\*/g,'').trim();
+        item.uri = item.plainName.replace(/ /g,'+');
+        if(item.commander){
+            commander = item;
+        } else {
+            cardsObj.push(item);
+        }
+    }
+    cardsObj.filter(Boolean);
+    cardsObj.push(commander);
 }
 
 // Adds drop shadow - taken straight from test examples
@@ -113,16 +142,17 @@ function dropShadow(x, y, b, a) {
     img.composite(orig, x1 - x, y1 - y);
     return img;
 }
-
 // Returns new card height after a rotation has been applied
 function postRotationScale(width,height,rotation) {
     return Math.hypot(width,height)*(Math.sin(Math.atan(height/width)+Math.abs((rotation*(Math.PI/180)))));
 }
 
+// Returns random integer with cap
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+// Returns locally cached image or calls requestImageFromAPI()
 function retrieveStoredImageData() {
     console.log("Searching store for: "+cardsObj[count].plainName);
     return jimp.read("./store/"+cardsObj[count].plainName+".png")
@@ -132,6 +162,7 @@ function retrieveStoredImageData() {
         });
 }
 
+// Returns image from Scryfall's API
 function requestImageFromAPI() {
     var options = {
       uri: "https://api.scryfall.com/cards/named?exact="+cardsObj[count].uri+"&format=image&version=png&set="+cardsObj[count].set,
@@ -152,10 +183,4 @@ function requestImageFromAPI() {
         .catch((err) => {
             console.log(err);
         });
-
-}
-
-function finalizeImage(finalImage) {
-    console.log("Done compositing. Writing to output.");
-    finalImage.write("./output/final.png");
 }
