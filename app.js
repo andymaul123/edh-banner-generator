@@ -69,9 +69,10 @@ function compositeImages(startingImage) {
             return dropShadow.call(image, 10, 10, 10, 0.6)
         })
         .then((image) => {
+            var rotation = (Math.round(Math.random()) * 2 - 1) * getRandomInt(30);
             return image
-                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
-                .resize(jimp.AUTO,600);
+                .rotate(rotation)
+                .resize(jimp.AUTO,postRotationScale(430,600,rotation));
         })
         .then((image) => {
             return startingImage.composite(image,400*count,0);
@@ -107,6 +108,11 @@ function dropShadow(x, y, b, a) {
     img.blur(b);
     img.composite(orig, x1 - x, y1 - y);
     return img;
+}
+
+// Returns new card height after a rotation has been applied
+function postRotationScale(width,height,rotation) {
+    return Math.hypot(width,height)*(Math.sin(Math.atan(height/width)+Math.abs((rotation*(Math.PI/180)))));
 }
 
 function getRandomInt(max) {
