@@ -33,6 +33,7 @@ function readInputDirectory() {
 function convertInputToObjects(input) {
     var list = String(input);
     list =  list.replace(/1x |1x/g,'');
+    list =  list.replace(/\r/g,'');
     cardsObj.namesArray = list.split('\n');
     list = list.replace(/ /g,'+');
     cardsObj.uriArray = list.split('\n');
@@ -48,24 +49,24 @@ function initJimp() {
 
 function compositeImages(startingImage) {
     retrieveStoredImageData()
-        // .then((image) => {
-        //     return image
-        //         .scale(2)
-        //         .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
-        //         .resize(870,jimp.AUTO);
-        // })
-        // .then((editedImage) => {
-        //     return startingImage.composite(editedImage,400*count,0);
-        // })
-        // .then((compositedImage) => {
-        //     if(count <=9 && count < cardsObj.uriArray.length - 1) {
-        //       count++;
-        //         compositeImages(compositedImage);
-        //     }
-        //     else {
-        //         finalizeImage(compositedImage);
-        //     }
-        // })
+        .then((image) => {
+            return image
+                .scale(2)
+                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
+                .resize(870,jimp.AUTO);
+        })
+        .then((editedImage) => {
+            return startingImage.composite(editedImage,400*count,0);
+        })
+        .then((compositedImage) => {
+            if(count <=9 && count < cardsObj.uriArray.length - 1) {
+              count++;
+                compositeImages(compositedImage);
+            }
+            else {
+                finalizeImage(compositedImage);
+            }
+        })
         .catch((err) => {
             console.log(err);
         });
@@ -76,7 +77,6 @@ function getRandomInt(max) {
 }
 
 function retrieveStoredImageData() {
-    console.log("./store/"+cardsObj.namesArray[count]+".png");
     return jimp.read("./store/"+cardsObj.namesArray[count]+".png")
         .catch((err) => {
             console.log("Failed to find image in storage. Accessing Scryfall API instead.");
@@ -95,8 +95,7 @@ function requestImageFromAPI() {
             console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
             return jimp.read(data)
             .then((image) => {
-                var path = "./store/Dromar, the Banisher.png";
-                image.write(path);
+                return image.write("./store/"+cardsObj.namesArray[count]+".png");
             })
             .catch((err) => {
                 console.log(err);
