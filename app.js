@@ -33,6 +33,7 @@ function readInputDirectory() {
 function convertInputToObjects(input) {
     var list = String(input);
     list =  list.replace(/1x |1x/g,'');
+    list =  list.replace(/\r/g,'');
     cardsObj.namesArray = list.split('\n');
     list = list.replace(/ /g,'+');
     cardsObj.uriArray = list.split('\n');
@@ -47,13 +48,10 @@ function initJimp() {
 }
 
 function compositeImages(startingImage) {
-    console.log("Compositing images.");
-    requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png")
-        .then((response) => {
-            return jimp.read(response)
-        })
+    retrieveStoredImageData()
         .then((image) => {
-            return image.scale(2)
+            return image
+                .scale(2)
                 .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
                 .resize(870,jimp.AUTO);
         })
@@ -78,20 +76,30 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-function retrieveStoredImageData(name) {
-
+function retrieveStoredImageData() {
+    return jimp.read("./store/"+cardsObj.namesArray[count]+".png")
+        .catch((err) => {
+            console.log("Failed to find image in storage. Accessing Scryfall API instead.");
+            return requestImageFromAPI();
+        });
 }
 
-function requestImageData(url) {
+function requestImageFromAPI() {
     var options = {
-      uri: url,
+      uri: "https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png",
       method: 'GET',
       encoding: null
     };
     return rp(options)
         .then((data) => {
-          console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
-          return data;
+            console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
+            return jimp.read(data)
+            .then((image) => {
+                return image.write("./store/"+cardsObj.namesArray[count]+".png");
+            })
+            .catch((err) => {
+                console.log(err);
+            });
         })
         .catch((err) => {
             console.log(err);
