@@ -47,28 +47,25 @@ function initJimp() {
 }
 
 function compositeImages(startingImage) {
-    console.log("Compositing images.");
-    requestImageData("https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png")
-        .then((response) => {
-            return jimp.read(response)
-        })
-        .then((image) => {
-            return image.scale(2)
-                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
-                .resize(870,jimp.AUTO);
-        })
-        .then((editedImage) => {
-            return startingImage.composite(editedImage,400*count,0);
-        })
-        .then((compositedImage) => {
-            if(count <=9 && count < cardsObj.uriArray.length - 1) {
-              count++;
-                compositeImages(compositedImage);
-            }
-            else {
-                finalizeImage(compositedImage);
-            }
-        })
+    retrieveStoredImageData()
+        // .then((image) => {
+        //     return image
+        //         .scale(2)
+        //         .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
+        //         .resize(870,jimp.AUTO);
+        // })
+        // .then((editedImage) => {
+        //     return startingImage.composite(editedImage,400*count,0);
+        // })
+        // .then((compositedImage) => {
+        //     if(count <=9 && count < cardsObj.uriArray.length - 1) {
+        //       count++;
+        //         compositeImages(compositedImage);
+        //     }
+        //     else {
+        //         finalizeImage(compositedImage);
+        //     }
+        // })
         .catch((err) => {
             console.log(err);
         });
@@ -78,20 +75,32 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-function retrieveStoredImageData(name) {
-
+function retrieveStoredImageData() {
+    console.log("./store/"+cardsObj.namesArray[count]+".png");
+    return jimp.read("./store/"+cardsObj.namesArray[count]+".png")
+        .catch((err) => {
+            console.log("Failed to find image in storage. Accessing Scryfall API instead.");
+            return requestImageFromAPI();
+        });
 }
 
-function requestImageData(url) {
+function requestImageFromAPI() {
     var options = {
-      uri: url,
+      uri: "https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png",
       method: 'GET',
       encoding: null
     };
     return rp(options)
         .then((data) => {
-          console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
-          return data;
+            console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
+            return jimp.read(data)
+            .then((image) => {
+                var path = "./store/Dromar, the Banisher.png";
+                image.write(path);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
         })
         .catch((err) => {
             console.log(err);
