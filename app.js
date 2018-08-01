@@ -5,7 +5,9 @@ Constants + Variables
 */
 const fse = require('fs-extra'),
       jimp = require('jimp'),
-      rp = require('request-promise');
+      rp = require('request-promise'),
+      argv = require('minimist')(process.argv.slice(2));
+
 
 let cardsObj = {},
     count = 0;
@@ -43,20 +45,36 @@ function convertInputToObjects(input) {
 
 function initJimp() {
     console.log("Initializing JIMP.");
-    var blankCanvas = new jimp(2048,842,0xFFFFFFFF).opacity(0);
-    compositeImages(blankCanvas);
+    if(argv.b) {
+        console.log("Background flag found. Will load default card back collage.");
+        jimp.read("https://i.imgur.com/ohgmxw0.jpg")
+            .then(compositeImages)
+            .catch((err) => {
+                console.log(err);
+            });
+    } else {
+        console.log("No background flag found (-b). Will create transparent background.");
+        var blankCanvas = new jimp(2048,842,0xFFFFFFFF).opacity(0);
+        compositeImages(blankCanvas);
+    }
 }
 
 function compositeImages(startingImage) {
     retrieveStoredImageData()
         .then((image) => {
             return image
-                .scale(2)
-                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
-                .resize(870,jimp.AUTO);
+                .scale(2);
         })
-        .then((editedImage) => {
-            return startingImage.composite(editedImage,400*count,0);
+        .then((image) => {
+            return dropShadow.call(image, 10, 10, 10, 0.6)
+        })
+        .then((image) => {
+            return image
+                .rotate((Math.round(Math.random()) * 2 - 1) * getRandomInt(30))
+                .resize(jimp.AUTO,600);
+        })
+        .then((image) => {
+            return startingImage.composite(image,400*count,0);
         })
         .then((compositedImage) => {
             if(count <=9 && count < cardsObj.uriArray.length - 1) {
@@ -72,11 +90,31 @@ function compositeImages(startingImage) {
         });
 }
 
+// Adds drop shadow - taken straight from test examples
+function dropShadow(x, y, b, a) {
+    var img = new jimp(this.bitmap.width + Math.abs(x*2) + (b*2), this.bitmap.height + Math.abs(y*2) + (b*2));
+    var orig = this.clone();
+    this.scan(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data[ idx + 0 ] = 0;
+        this.bitmap.data[ idx + 1 ] = 0;
+        this.bitmap.data[ idx + 2 ] = 0;
+        this.bitmap.data[ idx + 3 ] = this.bitmap.data[ idx + 3 ] * a;
+    });
+    
+    var x1 = Math.max(x * -1, 0) + b;
+    var y1 = Math.max(y * -1, 0) + b;
+    img.composite(this, x1, y1);
+    img.blur(b);
+    img.composite(orig, x1 - x, y1 - y);
+    return img;
+}
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
 function retrieveStoredImageData() {
+    console.log("Searching store for: "+cardsObj.namesArray[count]);
     return jimp.read("./store/"+cardsObj.namesArray[count]+".png")
         .catch((err) => {
             console.log("Failed to find image in storage. Accessing Scryfall API instead.");

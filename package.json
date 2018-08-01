@@ -28,6 +28,7 @@
   "dependencies": {
     "fs-extra": "^7.0.0",
     "jimp": "^0.2.28",
+    "minimist": "^1.2.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2"
   }
