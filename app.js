@@ -9,7 +9,7 @@ const fse = require('fs-extra'),
       argv = require('minimist')(process.argv.slice(2));
 
 
-let cardsObj = {},
+let cardsObj = [],
     count = 0;
 
 /*
@@ -33,14 +33,18 @@ function readInputDirectory() {
 }
 
 function convertInputToObjects(input) {
-    var list = String(input);
-    list =  list.replace(/1x |1x/g,'');
-    list =  list.replace(/\r/g,'');
-    cardsObj.namesArray = list.split('\n');
-    list = list.replace(/ /g,'+');
-    cardsObj.uriArray = list.split('\n');
-    cardsObj.namesArray = cardsObj.namesArray.filter(Boolean);
-    cardsObj.uriArray = cardsObj.uriArray.filter(Boolean);
+    var list = String(input).replace(/1x |1x/g,'');
+    var tempArray = list.split(/\n|\r/g);
+    var item = {};
+    for (var i = tempArray.length - 1; i >= 0; i--) {
+        item = {};
+        item.set = tempArray[i].indexOf("(") > -1 ? tempArray[i].slice(tempArray[i].indexOf("(")+1,tempArray[i].indexOf(")")).trim() : "";
+        item.commander = tempArray[i].indexOf("*") > -1 ? true : false;
+        item.plainName = tempArray[i].replace(/\([^)]*\)|\*/g,'').trim();
+        item.uri = item.plainName.replace(/ /g,'+');
+        cardsObj.push(item);
+    }
+    cardsObj.filter(Boolean);
 }
 
 function initJimp() {
@@ -78,7 +82,7 @@ function compositeImages(startingImage) {
             return startingImage.composite(image,400*count,0);
         })
         .then((compositedImage) => {
-            if(count <=9 && count < cardsObj.uriArray.length - 1) {
+            if(count <=9 && count < cardsObj.length - 1) {
               count++;
                 compositeImages(compositedImage);
             }
@@ -120,8 +124,8 @@ function getRandomInt(max) {
 }
 
 function retrieveStoredImageData() {
-    console.log("Searching store for: "+cardsObj.namesArray[count]);
-    return jimp.read("./store/"+cardsObj.namesArray[count]+".png")
+    console.log("Searching store for: "+cardsObj[count].plainName);
+    return jimp.read("./store/"+cardsObj[count].plainName+".png")
         .catch((err) => {
             console.log("Failed to find image in storage. Accessing Scryfall API instead.");
             return requestImageFromAPI();
@@ -130,16 +134,16 @@ function retrieveStoredImageData() {
 
 function requestImageFromAPI() {
     var options = {
-      uri: "https://api.scryfall.com/cards/named?exact="+cardsObj.uriArray[count]+"&format=image&version=png",
+      uri: "https://api.scryfall.com/cards/named?exact="+cardsObj[count].uri+"&format=image&version=png&set="+cardsObj[count].set,
       method: 'GET',
       encoding: null
     };
     return rp(options)
         .then((data) => {
-            console.log("Image request for: " + cardsObj.namesArray[count] + " successful.");
+            console.log("Image request for: " + cardsObj[count].plainName + " successful.");
             return jimp.read(data)
             .then((image) => {
-                return image.write("./store/"+cardsObj.namesArray[count]+".png");
+                return image.write("./store/"+cardsObj[count].plainName+".png");
             })
             .catch((err) => {
                 console.log(err);
