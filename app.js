@@ -10,7 +10,9 @@ const fse = require('fs-extra'),
 
 
 let cardsObj = [],
-    count = 0;
+    count = 0,
+    commanderCount = 0,
+    partners = false;
 
 /*
 ===================================================================================================
@@ -71,7 +73,7 @@ function compositeImages(startingImage) {
         })
         .then((image) => {
             if(cardsObj[count].commander) {
-                return startingImage.composite(image,809,121);
+                return startingImage.composite(image,commanderPlacement().x,commanderPlacement().y);
             } else {
                 return startingImage.composite(image,400*count,0);
             }
@@ -107,7 +109,7 @@ function convertInputToObjects(input) {
     var list = String(input).replace(/1x |1x/g,'');
     var tempArray = list.split(/\n|\r/g);
     var item = {};
-    var commander;
+    var commanders = [];
     for (var i = tempArray.length - 1; i >= 0; i--) {
         item = {};
         item.set = tempArray[i].indexOf("(") > -1 ? tempArray[i].slice(tempArray[i].indexOf("(")+1,tempArray[i].indexOf(")")).trim() : "";
@@ -115,13 +117,16 @@ function convertInputToObjects(input) {
         item.plainName = tempArray[i].replace(/\([^)]*\)|\*/g,'').trim();
         item.uri = item.plainName.replace(/ /g,'+');
         if(item.commander){
-            commander = item;
+            commanders.push(item);
         } else {
             cardsObj.push(item);
         }
     }
+    if(commanders.length >= 2) {
+        partners = true;
+    }
+    cardsObj = cardsObj.concat(commanders);
     cardsObj.filter(Boolean);
-    cardsObj.push(commander);
 }
 
 // Adds drop shadow - taken straight from test examples
@@ -141,6 +146,24 @@ function dropShadow(x, y, b, a) {
     img.blur(b);
     img.composite(orig, x1 - x, y1 - y);
     return img;
+}
+// Determines placement for commanders
+function commanderPlacement() {
+    var coordsObj = {
+        x:0,
+        y:121
+    };
+    if(partners) {
+        if(commanderCount == 0) {
+            coordsObj.x = 594;
+            commanderCount++;
+        } else {
+            coordsObj.x = 1024;
+        }
+    } else {
+        coordsObj.x = 809;
+    }
+    return coordsObj;
 }
 // Returns new card height after a rotation has been applied
 function postRotationScale(width,height,rotation) {
