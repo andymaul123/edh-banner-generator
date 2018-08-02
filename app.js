@@ -172,14 +172,40 @@ function commanderPlacement() {
     }
     return coordsObj;
 }
-// Determines card placement. Chooses horizontal section via modulus, then horizontal and vertical randomness
+// Determines card placement. Chooses horizontal section via modulus, then horizontal and vertical randomness. Accounts for corner placement on larger arrays
 function cardPlacement() {
     var coordsObj = {
         x:0,
         y:0
     };
-    coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
-    coordsObj.y = getRandomInt(-300,400);
+    if(count <= 3 && cardsObj.length >= 8) {
+        switch(count) {
+            case 0:
+                coordsObj.x = getRandomInt(-215,100);
+                coordsObj.y = getRandomInt(-300,0);
+                break;
+            case 1:
+                coordsObj.x = getRandomInt(1618,1833);
+                coordsObj.y = getRandomInt(-300,0);
+                break;
+            case 2:
+                coordsObj.x = getRandomInt(-215,100);
+                coordsObj.y = getRandomInt(242,542);
+                break;
+            case 3:
+                coordsObj.x = getRandomInt(1618,1833);
+                coordsObj.y = getRandomInt(242,542);
+                break;
+            default:
+                coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+                coordsObj.y = getRandomInt(-300,400);
+        }
+    } else {
+        coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+        coordsObj.y = getRandomInt(-300,400);
+    }
+    
+
     return coordsObj;
 }
 // Returns new card height after a rotation has been applied
