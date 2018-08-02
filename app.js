@@ -8,6 +8,8 @@ const fse = require('fs-extra'),
       rp = require('request-promise'),
       argv = require('minimist')(process.argv.slice(2));
 
+const maxIteration = 25;
+
 
 let cardsObj = [],
     count = 0,
@@ -79,7 +81,7 @@ function compositeImages(startingImage) {
             }
         })
         .then((compositedImage) => {
-            if(count <=9 && count < cardsObj.length - 1) {
+            if(count <= maxIteration && count < cardsObj.length - 1) {
               count++;
                 compositeImages(compositedImage);
             }
