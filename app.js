@@ -63,7 +63,7 @@ function compositeImages(startingImage) {
             return dropShadow.call(image, 10, 10, 10, 0.6)
         })
         .then((image) => {
-            var rotation = (Math.round(Math.random()) * 2 - 1) * getRandomInt(30);
+            var rotation = getRandomInt(-30,30);
             if(cardsObj[count].commander) {
                 rotation = 0;
             }
@@ -75,7 +75,7 @@ function compositeImages(startingImage) {
             if(cardsObj[count].commander) {
                 return startingImage.composite(image,commanderPlacement().x,commanderPlacement().y);
             } else {
-                return startingImage.composite(image,400*count,0);
+                return startingImage.composite(image,cardPlacement().x,cardPlacement().y);
             }
         })
         .then((compositedImage) => {
@@ -165,14 +165,24 @@ function commanderPlacement() {
     }
     return coordsObj;
 }
+// Determines card placement. Chooses horizontal section via modulus, then horizontal and vertical randomness
+function cardPlacement() {
+    var coordsObj = {
+        x:0,
+        y:0
+    };
+    coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+    coordsObj.y = getRandomInt(-300,400);
+    return coordsObj;
+}
 // Returns new card height after a rotation has been applied
 function postRotationScale(width,height,rotation) {
     return Math.hypot(width,height)*(Math.sin(Math.atan(height/width)+Math.abs((rotation*(Math.PI/180)))));
 }
 
-// Returns random integer with cap
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
+// Returns random integer within range
+function getRandomInt(min,max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 // Returns locally cached image or calls requestImageFromAPI()
