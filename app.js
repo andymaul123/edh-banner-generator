@@ -8,13 +8,14 @@ const fse = require('fs-extra'),
       rp = require('request-promise'),
       argv = require('minimist')(process.argv.slice(2));
 
-const maxIteration = 25;
+const maxIteration = 30;
 
 
 let cardsObj = [],
     count = 0,
     commanderCount = 0,
-    partners = false;
+    partners = false,
+    timeStart = new Date();
 
 /*
 ===================================================================================================
@@ -97,7 +98,9 @@ function compositeImages(startingImage) {
 // Core loop terminates here and outputs final version to local system
 function finalizeImage(finalImage) {
     console.log("Done compositing. Writing to output.");
-    finalImage.write("./output/final.png");
+    finalImage.write("./output/final.png",function(){
+        console.log("Process completed in: " + timeConvert(timeStart,new Date()));
+    });
 }
 
 /*
@@ -128,7 +131,9 @@ function convertInputToObjects(input) {
         partners = true;
     }
     cardsObj = cardsObj.concat(commanders);
-    cardsObj.filter(Boolean);
+    cardsObj = cardsObj.filter(function(item){
+        return item.plainName != "";
+    });
 }
 
 // Adds drop shadow - taken straight from test examples
@@ -185,6 +190,23 @@ function postRotationScale(width,height,rotation) {
 // Returns random integer within range
 function getRandomInt(min,max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+// Milliseconds to human-readable function
+function timeConvert(startTime, endTime) {
+    var milliseconds = parseInt(endTime.getTime()) - parseInt(startTime.getTime());
+    if(milliseconds > 999) {
+        var seconds = parseInt((milliseconds / 1000) % 60).toFixed(0),
+        minutes = parseInt((milliseconds / (1000 * 60)) % 60).toFixed(0),
+        hours = parseInt((milliseconds / (1000 * 60 * 60)) % 24).toFixed(0);
+
+        hours = (hours < 10) ? "0" + hours : hours;
+        minutes = (minutes < 10) ? "0" + minutes : minutes;
+        seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+        return hours + ":" + minutes + ":" + seconds;
+    }
+    return "< 1s";
 }
 
 // Returns locally cached image or calls requestImageFromAPI()
