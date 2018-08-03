@@ -77,7 +77,21 @@ function compositeImages(startingImage) {
         .then((image) => {
             if(cardsObj[count].commander) {
                 return startingImage.composite(image,commanderPlacement().x,commanderPlacement().y);
-            } else {
+            } else if(count >= cardsObj.length / 2) {
+                return calcEmptyCoordPosition(startingImage)
+                    .then((emptyCoords) => {
+                        if(isNaN(emptyCoords.x) || isNaN(emptyCoords.y)) {
+                            console.log("Rerouting");
+                            return startingImage.composite(image,cardPlacement().x,cardPlacement().y);
+                        } else {
+                            return startingImage.composite(image,emptyCoords.x,emptyCoords.y);
+                        }
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+            }
+             else {
                 return startingImage.composite(image,cardPlacement().x,cardPlacement().y);
             }
         })
@@ -197,11 +211,11 @@ function cardPlacement() {
                 coordsObj.y = getRandomInt(242,542);
                 break;
             default:
-                coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+                coordsObj.x = getRandomInt(quadCoordStart(),quadCoordEnd());
                 coordsObj.y = getRandomInt(-300,400);
         }
     } else {
-        coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+        coordsObj.x = getRandomInt(quadCoordStart(),quadCoordEnd());
         coordsObj.y = getRandomInt(-300,400);
     }
     
@@ -209,34 +223,45 @@ function cardPlacement() {
     return coordsObj;
 }
 function calcEmptyCoordPosition(image) {
-    var averagesArray = [];
-    var xTotal = 0, yTotal = 0;
-    jimp.read('./output/final.png')
-        .then((img) => {
-            return img
-                .scan(0,0,512,842,function(x,y){
-                    if(img.getPixelColor(x, y) == 4294967040) {
-                        averagesArray.push({xVal:parseInt(x),yVal:parseInt(y)})
-                    }
-                });
-        })
-        .then((img) => {
-            for (var i = averagesArray.length - 1; i >= 0; i--) {
-                xTotal += averagesArray[i].xVal;
-                yTotal += averagesArray[i].yVal;
-            }
-            xTotal = xTotal / averagesArray.length;
-            yTotal = yTotal / averagesArray.length;
-            return {x:xTotal,y:yTotal};
-        })
-        .catch(err => {
-            console.error(err);
-        });
+    var averagesArray = [], xTotal = 0, yTotal = 0;
+    return new Promise(function(resolve, reject) {
+            image.scan(quadCoordStart(),0,512,842,function(x,y) {
+                if(image.getPixelColor(x, y) == 0) {
+                    averagesArray.push({xVal:parseInt(x,10),yVal:parseInt(y,10)})
+                }
+                if (x == quadCoordEnd() - 1 && y == 842 - 1) {
+                   resolve();
+                }
+            });
+    })
+    .then(() => {
+        for (var i = averagesArray.length - 1; i >= 0; i--) {
+            xTotal += averagesArray[i].xVal;
+            yTotal += averagesArray[i].yVal;
+        }
+        xTotal = xTotal / averagesArray.length;
+        yTotal = yTotal / averagesArray.length;
+        console.log(Math.floor(xTotal));
+        console.log(Math.floor(yTotal));
+        return {x:Math.floor(xTotal-170),y:Math.floor(yTotal-300)};
+    })
+    .catch(err => {
+        console.error(err);
+    });
 }
 // Returns new card height after a rotation has been applied
 function postRotationScale(width,height,rotation) {
     return Math.hypot(width,height)*(Math.sin(Math.atan(height/width)+Math.abs((rotation*(Math.PI/180)))));
 }
+
+// Functions to return columnar coordinate positions
+function quadCoordStart() {
+    return ((count%4 +1) * 512) - 512;
+}
+function quadCoordEnd() {
+    return (count%4 +1) * 512;
+}
+
 
 // Returns random integer within range
 function getRandomInt(min,max) {
