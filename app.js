@@ -8,7 +8,7 @@ const fse = require('fs-extra'),
       rp = require('request-promise'),
       argv = require('minimist')(process.argv.slice(2));
 
-const maxIteration = 30;
+const maxIteration = 40;
 
 
 let cardsObj = [],
@@ -67,7 +67,7 @@ function compositeImages(startingImage) {
         })
         .then((image) => {
             var rotation = getRandomInt(-30,30);
-            if(cardsObj[count].commander) {
+            if(cardsObj[count].commander || count <= 11) {
                 rotation = 0;
             }
             return image
@@ -178,29 +178,14 @@ function cardPlacement() {
         x:0,
         y:0
     };
-    if(count <= 3 && cardsObj.length >= 8) {
-        switch(count) {
-            case 0:
-                coordsObj.x = getRandomInt(-215,100);
-                coordsObj.y = getRandomInt(-300,0);
-                break;
-            case 1:
-                coordsObj.x = getRandomInt(1618,1833);
-                coordsObj.y = getRandomInt(-300,0);
-                break;
-            case 2:
-                coordsObj.x = getRandomInt(-215,100);
-                coordsObj.y = getRandomInt(242,542);
-                break;
-            case 3:
-                coordsObj.x = getRandomInt(1618,1833);
-                coordsObj.y = getRandomInt(242,542);
-                break;
-            default:
-                coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
-                coordsObj.y = getRandomInt(-300,400);
-        }
-    } else {
+    if(count <=5) {
+        coordsObj.x = ((count%6 +1) * 340) - 340;
+        coordsObj.y = 0;
+    } else if (count > 5 && count <= 11) {
+        coordsObj.x = ((count%6 +1) * 340) - 400;
+        coordsObj.y = 320;
+    } 
+    else {
         coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
         coordsObj.y = getRandomInt(-300,400);
     }
