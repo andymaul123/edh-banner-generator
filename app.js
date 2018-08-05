@@ -67,7 +67,7 @@ function compositeImages(startingImage) {
         })
         .then((image) => {
             var rotation = getRandomInt(-30,30);
-            if(cardsObj[count].commander || count <= 11) {
+            if(cardsObj[count].commander || count <= 11 && !argv.r) {
                 rotation = 0;
             }
             return image
@@ -111,7 +111,7 @@ Helper Functions
 
 // Processes input data into usable structure
 function convertInputToObjects(input) {
-    var list = String(input).replace(/1x |1x/g,'');
+    var list = String(input).replace(/[0-9]+x |[0-9]+x/g,'');
     var tempArray = list.split(/\n|\r/g);
     var item = {};
     var commanders = [];
@@ -178,15 +178,15 @@ function cardPlacement() {
         x:0,
         y:0
     };
-    if(count <=5) {
-        coordsObj.x = ((count%6 +1) * 340) - 340;
-        coordsObj.y = 0;
-    } else if (count > 5 && count <= 11) {
+    if(count <=5 && !argv.r) {
+        coordsObj.x = ((count%6 +1) * 340) - 360;
+        coordsObj.y = -20;
+    } else if (count > 5 && count <= 11 && !argv.r) {
         coordsObj.x = ((count%6 +1) * 340) - 400;
         coordsObj.y = 320;
     } 
     else {
-        coordsObj.x = getRandomInt((((count%4 +1) * 512) - 512),(count%4 +1) * 512);
+        coordsObj.x = getRandomInt((((count%4 +1) * 512) - 600),(count%4 +1) * 600);
         coordsObj.y = getRandomInt(-300,400);
     }
     
@@ -233,7 +233,7 @@ function retrieveStoredImageData() {
 // Returns image from Scryfall's API
 function requestImageFromAPI() {
     var options = {
-      uri: "https://api.scryfall.com/cards/named?exact="+cardsObj[count].uri+"&format=image&version=png&set="+cardsObj[count].set,
+      uri: "https://api.scryfall.com/cards/named?fuzzy="+cardsObj[count].uri+"&format=image&version=png&set="+cardsObj[count].set,
       method: 'GET',
       encoding: null
     };
