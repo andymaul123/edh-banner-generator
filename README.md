@@ -83,3 +83,6 @@ Compositing images may cause spikes in CPU load. Most testing was done on Window
 Scryfall has an API rate limit of 10 requests per second.
 
 Each image downloaded is roughly ~1.75mb. Final outputs are ~3.75mb. Ensure that your ISP and local disk space can accommodate the use of this app.
+
+# License
+This project is licensed under the terms of the MIT license; see license.md for details.
